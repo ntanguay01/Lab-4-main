@@ -2,13 +2,16 @@
 # CSCI-2910 Server-Side Web Programming
 # Lab 4
 
-from API_CLIENT import ApiError, get_country_by_name, get_country_by_code 
+from API_CLIENT import ApiError, get_country_by_name, get_country_by_code, get_countries_by_region
+
+REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"]
 
 # Menu
 def print_menu():
     print("\n=== Country Explorer ===")
     print("1. Look up a country")
-    print("2. Exit")
+    print("1. Browse countries by region")
+    print("3. Exit")
 
 # Choose Country from menu
 def choose_country(matches):
@@ -89,6 +92,46 @@ def lookup_country():
             if answer == "y":
                 show_neighbors(country)
 
+def browse_region():
+    print("\nRegions:")
+    for number, region in enumerate(REGIONS, start=1):
+        print(f"  {number}. {region}")
+ 
+    choice = input("Pick a region (or press Enter to cancel): ").strip()
+    if choice == "":
+        return
+    if not (choice.isdigit() and 1 <= int(choice) <= len(REGIONS)):
+        print("Please enter a number from the list.")
+        return
+    region = REGIONS[int(choice) - 1]
+ 
+    try:
+        countries = get_countries_by_region(region)  # 📡 CALL C
+    except ApiError as err:
+        print(f"\nCould not load {region}: {err}")
+        return
+ 
+    if not countries:
+        print(f"\nNo countries found for {region}.")
+        return
+ 
+    countries.sort(key=lambda c: c.get("population", 0), reverse=True)
+ 
+    show_all = False
+    if len(countries) > 10:
+        answer = input(f"\n{len(countries)} countries found. Show all? (y = all, Enter = top 10): ")
+        show_all = answer.strip().lower() == "y"
+    shown = countries if show_all else countries[:10]
+ 
+    print(f"\n{region} - by population")
+    print(f"  {'#':<4}{'Country':<32}{'Capital':<24}{'Population':>14}")
+    for rank, country in enumerate(shown, start=1):
+        capitals = [c["name"] for c in country.get("capitals", [])]
+        print(
+            f"  {rank:<4}{country['names']['common'][:30]:<32}"
+            f"{(', '.join(capitals) or 'N/A')[:22]:<24}"
+            f"{country.get('population', 0):>14,}"
+        )
 
 def main():
     while True:
@@ -98,7 +141,9 @@ def main():
         if choice == "1":
             lookup_country()
         elif choice == "2":
-            print("Goodbye!")
+            browse_region()
+        elif choice == "3":
+            print("Thank for playing!")
             break
         else:
             print("Invalid choice. Please enter 1 or 2.")
