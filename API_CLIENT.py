@@ -7,10 +7,13 @@ import requests
 from urllib.parse import quote
 from dotenv import load_dotenv
 
+
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 BASE_URL = "https://api.restcountries.com/countries/v5"
 PAGE_SIZE = 100
+
+_all_countries_cache = None  # filled the first time get_all_countries() function runs
 
 
 class ApiError(Exception):
@@ -107,3 +110,14 @@ def get_countries_by_language(language):
     if not results:
         results = _get_all_pages("/languages", {**fields, "q": language})
     return results
+
+# Gets every countries and get information needed for flag quiz
+def get_all_countries():
+    # Get every country, trimmed to only what the flag quiz needs.
+    global _all_countries_cache
+    if _all_countries_cache is None:
+        _all_countries_cache = _get_all_pages(
+            "",
+            {"response_fields": "names.common,flag.emoji,flag.url_png,classification.sovereign"},
+        )
+    return _all_countries_cache

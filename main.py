@@ -2,7 +2,9 @@
 # CSCI-2910 Server-Side Web Programming
 # Lab 4
 
-from API_CLIENT import ApiError, get_country_by_name, get_country_by_code, get_countries_by_region, get_countries_by_currency, get_countries_by_language
+import random
+
+from API_CLIENT import ApiError, get_country_by_name, get_country_by_code, get_countries_by_region, get_countries_by_currency, get_countries_by_language, get_all_countries
 
 REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"]
 
@@ -12,7 +14,8 @@ def print_menu():
     print("1. Look up a country")
     print("2. Browse countries by region")
     print("3. Search by currency or language")
-    print("4. Exit")
+    print("4. Flag quiz")
+    print("5. Exit")
 
 # Choose Country from menu
 def choose_country(matches):
@@ -202,6 +205,46 @@ def search_menu():
     elif choice != "":
         print("Please enter 1 or 2.")
 
+ # Create flag quiz
+def flag_quiz():
+    print("\nLoading countries...")
+    try:
+        countries = get_all_countries()
+    except ApiError as err:
+        print(f"\nCould not load the quiz: {err}")
+        return
+
+    pool = [c for c in countries if c.get("classification", {}).get("sovereign")] or countries
+    pool = [c for c in pool if c.get("flag", {}).get("emoji")]
+    if not pool:
+        print("No flag data available.")
+        return
+ 
+    rounds = input(f"How many rounds? (1-{len(pool)}, Enter = 5): ").strip()
+    rounds = int(rounds) if rounds.isdigit() and 1 <= int(rounds) <= len(pool) else 5
+ 
+    print("\nName the country! Type 'q' to quit early.")
+    score = 0
+    played = 0
+ 
+    for number, country in enumerate(random.sample(pool, rounds), start=1):
+        answer = country["names"]["common"]
+        print(f"\nRound {number}/{rounds}:  {country['flag']['emoji']}")
+        print(f"  (if you only see letters, open the image: {country['flag']['url_png']})")
+        guess = input("Which country is this? ").strip()
+ 
+        if guess.lower() == "q":
+            break
+        played += 1
+        if guess.lower() == answer.lower():
+            score += 1
+            print("Correct!")
+        else:
+            print(f"Not quite. It was {answer}.")
+ 
+    print(f"\nFinal score: {score}/{played}")
+
+ # Print menu
 def main():
     while True:
         print_menu()
@@ -214,6 +257,8 @@ def main():
         elif choice == "3":
             search_menu()
         elif choice == "4":
+            flag_quiz()
+        elif choice == "5":
             print("Thank for playing!")
             break
         else:
