@@ -2,7 +2,7 @@
 # CSCI-2910 Server-Side Web Programming
 # Lab 4
 
-from API_CLIENT import ApiError, get_country_by_name, get_country_by_code, get_countries_by_region
+from API_CLIENT import ApiError, get_country_by_name, get_country_by_code, get_countries_by_region, get_countries_by_currency, get_countries_by_language
 
 REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"]
 
@@ -10,12 +10,13 @@ REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"]
 def print_menu():
     print("\n=== Country Explorer ===")
     print("1. Look up a country")
-    print("1. Browse countries by region")
-    print("3. Exit")
+    print("2. Browse countries by region")
+    print("3. Search by currency or language")
+    print("4. Exit")
 
 # Choose Country from menu
 def choose_country(matches):
-    """If a search found several countries, let the user pick one."""
+    # If a search found several countries, let the user pick one.
     if len(matches) == 1:
         return matches[0]
 
@@ -106,7 +107,7 @@ def browse_region():
     region = REGIONS[int(choice) - 1]
  
     try:
-        countries = get_countries_by_region(region)  # 📡 CALL C
+        countries = get_countries_by_region(region)
     except ApiError as err:
         print(f"\nCould not load {region}: {err}")
         return
@@ -133,6 +134,74 @@ def browse_region():
             f"{country.get('population', 0):>14,}"
         )
 
+# Find country by currency used
+def search_by_currency():
+    code = input("\nCurrency code (e.g. EUR, USD, JPY): ").strip()
+    if not code:
+        print("Please enter a currency code.")
+        return
+ 
+    try:
+        countries = get_countries_by_currency(code)
+    except ApiError as err:
+        print(f"\nCould not search by currency: {err}")
+        return
+ 
+    if not countries:
+        print(f"\nNo countries found using the currency '{code.upper()}'.")
+        return
+ 
+    countries.sort(key=lambda c: c["names"]["common"])
+    print(f"\n{len(countries)} countries use {code.upper()}:")
+    for country in countries:
+        # Show the matching currency's name and symbol
+        match = next(
+            (cur for cur in country.get("currencies", []) if cur["code"].lower() == code.lower()),
+            None,
+        )
+        detail = f"{match['name']} ({match['symbol']})" if match else ""
+        print(f"  {country['names']['common']:<34}{detail}")
+
+# Find country by langauage spoken
+def search_by_language():
+    language = input("\nLanguage name in English (e.g. Spanish, French): ").strip()
+    if not language:
+        print("Please enter a language.")
+        return
+ 
+    try:
+        countries = get_countries_by_language(language)
+    except ApiError as err:
+        print(f"\nCould not search by language: {err}")
+        return
+ 
+    if not countries:
+        print(f"\nNo countries found where '{language}' is spoken.")
+        return
+ 
+    countries.sort(key=lambda c: c["names"]["common"])
+    print(f"\n{len(countries)} countries where {language.title()} is spoken:")
+    for country in countries:
+        others = [
+            lang["name"]
+            for lang in country.get("languages", [])
+            if lang["name"].lower() != language.lower()
+        ]
+        extra = f"Country also speaks: {', '.join(others)}" if others else ""
+        print(f"  {country['names']['common']:<34}{extra}")
+
+def search_menu():
+    print("\nSearch by:")
+    print("  1. Currency")
+    print("  2. Language")
+    choice = input("Pick an option (or press Enter to cancel): ").strip()
+    if choice == "1":
+        search_by_currency()
+    elif choice == "2":
+        search_by_language()
+    elif choice != "":
+        print("Please enter 1 or 2.")
+
 def main():
     while True:
         print_menu()
@@ -143,6 +212,8 @@ def main():
         elif choice == "2":
             browse_region()
         elif choice == "3":
+            search_menu()
+        elif choice == "4":
             print("Thank for playing!")
             break
         else:

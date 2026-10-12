@@ -4,6 +4,7 @@
 
 import os
 import requests
+from urllib.parse import quote
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -89,3 +90,20 @@ def get_countries_by_region(region):
         f"/region/{region}",
         {"response_fields": "names.common,capitals,population"},
     )
+
+# Get countries by currency
+def get_countries_by_currency(currency_code):
+    # Get every country from inputted currency
+    return _get_all_pages(
+        f"/currencies/{quote(currency_code)}",
+        {"response_fields": "names.common,currencies"},
+    )
+
+# Get countries by spoken language
+def get_countries_by_language(language):
+    # Gets every country where inputted langauge is spoken
+    fields = {"response_fields": "names.common,languages"}
+    results = _get_all_pages(f"/languages/{quote(language)}", fields)
+    if not results:
+        results = _get_all_pages("/languages", {**fields, "q": language})
+    return results
