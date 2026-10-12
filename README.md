@@ -3,4 +3,5 @@ Using REST Countries API for school Project/Lab. Use to get Countries and get in
 
 
 ## Issues
-- 
+- Each neighbors counts as one API requests so China and its neighbors cost 14 API requests, need to fix limitation
+- Only gets max 25 results from searching, need to fix that to get all available searches

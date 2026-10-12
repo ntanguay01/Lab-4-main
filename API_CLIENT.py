@@ -30,8 +30,6 @@ def _get(path="", params=None):
     except requests.exceptions.RequestException as err:
         raise ApiError(f"Network problem: {err}") from err
 
-    # The rate limit (20 requests / 10 seconds) is enforced before the API,
-    # so a 429 has no JSON body.
     if response.status_code == 429:
         raise ApiError("Too many requests. Wait a few seconds and try again.")
 
@@ -50,9 +48,15 @@ def _get(path="", params=None):
 
 # Get country by name
 def get_country_by_name(name):
-    """Find countries whose name matches `name`.
-
-    GET /countries/v5/name?q=japan
-    Returns a list. It can hold several countries (e.g. "united").
-    """
+    # Find country by name
+   
     return _get("/name", {"q": name})
+
+# Get country by code
+def get_country_by_code(code):
+    # Find country by three letter code 
+
+    return _get(
+        f"/codes.alpha_3/{code}",
+        {"response_fields": "names.common,codes.alpha_3"},
+    )
